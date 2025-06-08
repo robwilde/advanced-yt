@@ -7,6 +7,40 @@
 <a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
 </p>
 
+## YouTube API Integration
+
+This project includes a service for connecting to the YouTube API to access account playlists. The integration uses the Google API Client library and follows the Actions pattern.
+
+### Environment Variables
+
+The following environment variables are required for the YouTube API integration:
+
+```
+YOUTUBE_CLIENT_ID=your-client-id
+YOUTUBE_CLIENT_SECRET=your-client-secret
+YOUTUBE_REDIRECT_URI=your-redirect-uri
+YOUTUBE_API_KEY=your-api-key
+```
+
+These are currently stored in the `.env` file but will eventually be moved to a database table associated with users.
+
+### Services
+
+- `YouTubeService`: Handles the connection to the YouTube API and provides methods for authentication and fetching playlists and playlist items.
+
+### Actions
+
+- `FetchYouTubePlaylists`: Action to fetch a user's YouTube playlists.
+- `FetchYouTubePlaylistItems`: Action to fetch items from a specific YouTube playlist.
+
+### Testing
+
+The YouTube API integration is covered by PEST tests:
+
+- `tests/Unit/Services/YouTubeServiceTest.php`: Tests for the YouTube service.
+- `tests/Unit/Actions/FetchYouTubePlaylistsTest.php`: Tests for the FetchYouTubePlaylists action.
+- `tests/Unit/Actions/FetchYouTubePlaylistItemsTest.php`: Tests for the FetchYouTubePlaylistItems action.
+
 ## About Laravel
 
 Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
