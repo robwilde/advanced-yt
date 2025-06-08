@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Services\Contracts\YouTubeServiceInterface;
 use Google\Service\Exception;
 use Google_Client;
 use Google_Service_YouTube;
 
-final class YouTubeService
+final class YouTubeService implements YouTubeServiceInterface
 {
     private readonly Google_Client $client;
     private ?Google_Service_YouTube $youtube = null;
