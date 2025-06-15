@@ -1,4 +1,7 @@
-<?php /** @noinspection PhpUnhandledExceptionInspection */
+<?php
+
+declare(strict_types=1);
+/** @noinspection PhpUnhandledExceptionInspection */
 
 use App\Actions\FetchYouTubePlaylistItems;
 use App\Services\Contracts\YouTubeServiceInterface;
