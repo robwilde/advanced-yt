@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Models\YouTubeSubscription;
 use App\Models\UserYouTubeAccount;
+use App\Models\UserPlaylist;
 use App\Services\Contracts\YouTubeServiceInterface;
 use Google\Service\Exception;
 use Google_Client;
@@ -32,6 +33,7 @@ final class YouTubeService implements YouTubeServiceInterface
         $this->client->setDeveloperKey($youtubeConfig['api_key'] ?? '');
         $this->client->setScopes([
             'https://www.googleapis.com/auth/youtube.readonly',
+            'https://www.googleapis.com/auth/youtube', // Full access for playlist management
         ]);
         $this->client->setAccessType('offline');
         $this->client->setPrompt('consent');
@@ -319,6 +321,272 @@ final class YouTubeService implements YouTubeServiceInterface
                     : null,
             ]
         );
+    }
+
+    /**
+     * Create a new YouTube playlist
+     *
+     * @throws Exception
+     */
+    public function createPlaylist(string $title, ?string $description = null, string $privacyStatus = 'private'): array
+    {
+        $this->initYouTubeService();
+
+        $playlist = new \Google_Service_YouTube_Playlist();
+        $playlistSnippet = new \Google_Service_YouTube_PlaylistSnippet();
+        $playlistStatus = new \Google_Service_YouTube_PlaylistStatus();
+
+        $playlistSnippet->setTitle($title);
+        if ($description) {
+            $playlistSnippet->setDescription($description);
+        }
+
+        $playlistStatus->setPrivacyStatus($privacyStatus);
+
+        $playlist->setSnippet($playlistSnippet);
+        $playlist->setStatus($playlistStatus);
+
+        $response = $this->youtube->playlists->insert('snippet,status', $playlist);
+
+        $thumbnails = $response->getSnippet()->getThumbnails();
+        $thumbnail = null;
+        if ($thumbnails && $thumbnails->getHigh()) {
+            $thumbnail = $thumbnails->getHigh()->getUrl();
+        }
+
+        return [
+            'id' => $response->getId(),
+            'title' => $response->getSnippet()->getTitle(),
+            'description' => $response->getSnippet()->getDescription() ?? '',
+            'thumbnail' => $thumbnail,
+            'privacyStatus' => $response->getStatus()->getPrivacyStatus(),
+            'itemCount' => 0,
+        ];
+    }
+
+    /**
+     * Update an existing YouTube playlist
+     *
+     * @throws Exception
+     */
+    public function updatePlaylist(string $playlistId, ?string $title = null, ?string $description = null, ?string $privacyStatus = null): array
+    {
+        $this->initYouTubeService();
+
+        // First get the current playlist
+        $response = $this->youtube->playlists->listPlaylists('snippet,status', [
+            'id' => $playlistId,
+        ]);
+
+        $playlists = $response->getItems();
+        if (empty($playlists)) {
+            throw new RuntimeException('Playlist not found');
+        }
+
+        $playlist = $playlists[0];
+        $snippet = $playlist->getSnippet();
+        $status = $playlist->getStatus();
+
+        // Update fields if provided
+        if ($title !== null) {
+            $snippet->setTitle($title);
+        }
+        if ($description !== null) {
+            $snippet->setDescription($description);
+        }
+        if ($privacyStatus !== null) {
+            $status->setPrivacyStatus($privacyStatus);
+        }
+
+        $playlist->setSnippet($snippet);
+        $playlist->setStatus($status);
+
+        $updatedPlaylist = $this->youtube->playlists->update('snippet,status', $playlist);
+
+        $thumbnails = $updatedPlaylist->getSnippet()->getThumbnails();
+        $thumbnail = null;
+        if ($thumbnails && $thumbnails->getHigh()) {
+            $thumbnail = $thumbnails->getHigh()->getUrl();
+        }
+
+        return [
+            'id' => $updatedPlaylist->getId(),
+            'title' => $updatedPlaylist->getSnippet()->getTitle(),
+            'description' => $updatedPlaylist->getSnippet()->getDescription() ?? '',
+            'thumbnail' => $thumbnail,
+            'privacyStatus' => $updatedPlaylist->getStatus()->getPrivacyStatus(),
+        ];
+    }
+
+    /**
+     * Delete a YouTube playlist
+     *
+     * @throws Exception
+     */
+    public function deletePlaylist(string $playlistId): bool
+    {
+        $this->initYouTubeService();
+
+        try {
+            $this->youtube->playlists->delete($playlistId);
+            return true;
+        } catch (Exception $e) {
+            Log::error('Failed to delete YouTube playlist', [
+                'playlistId' => $playlistId,
+                'error' => $e->getMessage()
+            ]);
+            return false;
+        }
+    }
+
+    /**
+     * Add a video to a playlist
+     *
+     * @throws Exception
+     */
+    public function addVideoToPlaylist(string $playlistId, string $videoId): array
+    {
+        $this->initYouTubeService();
+
+        $playlistItem = new \Google_Service_YouTube_PlaylistItem();
+        $playlistItemSnippet = new \Google_Service_YouTube_PlaylistItemSnippet();
+        $playlistItemResource = new \Google_Service_YouTube_ResourceId();
+
+        $playlistItemResource->setVideoId($videoId);
+        $playlistItemResource->setKind('youtube#video');
+
+        $playlistItemSnippet->setPlaylistId($playlistId);
+        $playlistItemSnippet->setResourceId($playlistItemResource);
+
+        $playlistItem->setSnippet($playlistItemSnippet);
+
+        $response = $this->youtube->playlistItems->insert('snippet', $playlistItem);
+
+        return [
+            'id' => $response->getId(),
+            'playlistId' => $response->getSnippet()->getPlaylistId(),
+            'videoId' => $response->getSnippet()->getResourceId()->getVideoId(),
+            'title' => $response->getSnippet()->getTitle(),
+            'position' => $response->getSnippet()->getPosition(),
+        ];
+    }
+
+    /**
+     * Remove a video from a playlist
+     *
+     * @throws Exception
+     */
+    public function removeVideoFromPlaylist(string $playlistItemId): bool
+    {
+        $this->initYouTubeService();
+
+        try {
+            $this->youtube->playlistItems->delete($playlistItemId);
+            return true;
+        } catch (Exception $e) {
+            Log::error('Failed to remove video from playlist', [
+                'playlistItemId' => $playlistItemId,
+                'error' => $e->getMessage()
+            ]);
+            return false;
+        }
+    }
+
+    /**
+     * Sync user's playlists from YouTube API
+     *
+     * @throws Exception
+     */
+    public function syncUserPlaylists(): array
+    {
+        $userId = Auth::id();
+        if (!$userId) {
+            throw new RuntimeException('User not authenticated');
+        }
+
+        $this->initYouTubeService();
+
+        $allPlaylists = [];
+        $nextPageToken = null;
+
+        try {
+            DB::beginTransaction();
+
+            do {
+                $params = [
+                    'mine' => true,
+                    'maxResults' => 50,
+                    'part' => 'snippet,contentDetails,status',
+                ];
+
+                if ($nextPageToken) {
+                    $params['pageToken'] = $nextPageToken;
+                }
+
+                $response = $this->youtube->playlists->listPlaylists('snippet,contentDetails,status', $params);
+                $items = $response->getItems();
+                $nextPageToken = $response->getNextPageToken();
+
+                foreach ($items as $item) {
+                    $snippet = $item->getSnippet();
+                    $contentDetails = $item->getContentDetails();
+                    $status = $item->getStatus();
+
+                    $thumbnails = $snippet->getThumbnails();
+                    $thumbnail = null;
+                    if ($thumbnails && $thumbnails->getHigh()) {
+                        $thumbnail = $thumbnails->getHigh()->getUrl();
+                    }
+
+                    $playlistData = [
+                        'user_id' => $userId,
+                        'youtube_playlist_id' => $item->getId(),
+                        'title' => $snippet->getTitle(),
+                        'description' => $snippet->getDescription() ?? '',
+                        'thumbnail_url' => $thumbnail,
+                        'privacy_status' => $status->getPrivacyStatus(),
+                        'item_count' => $contentDetails->getItemCount(),
+                        'is_managed' => true,
+                        'last_synced_at' => now(),
+                    ];
+
+                    // Update or create playlist
+                    UserPlaylist::updateOrCreate(
+                        [
+                            'user_id' => $userId,
+                            'youtube_playlist_id' => $item->getId(),
+                        ],
+                        $playlistData
+                    );
+
+                    $allPlaylists[] = $playlistData;
+                }
+
+            } while ($nextPageToken);
+
+            DB::commit();
+
+            Log::info('Successfully synced YouTube playlists', [
+                'userId' => $userId,
+                'totalSynced' => count($allPlaylists)
+            ]);
+
+            return [
+                'success' => true,
+                'total' => count($allPlaylists),
+                'message' => 'Successfully synced ' . count($allPlaylists) . ' playlists'
+            ];
+
+        } catch (Exception $e) {
+            DB::rollBack();
+            Log::error('Failed to sync YouTube playlists', [
+                'userId' => $userId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            throw $e;
+        }
     }
 
     private function updateLastSyncTime(int $userId): void
