@@ -8,6 +8,7 @@ use App\Models\Category;
 use App\Models\YouTubeSubscription;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
+use Livewire\Attributes\On;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -72,26 +73,11 @@ class SubscriptionManager extends Component
         $this->resetPage();
     }
 
-    public function assignToCategory(string $channelId, int $categoryId): void
+    #[On('subscription-updated')]
+    public function onSubscriptionUpdated(): void
     {
-        $subscription = YouTubeSubscription::forUser(Auth::id())
-            ->where('channel_id', $channelId)
-            ->firstOrFail();
-
-        $subscription->addToCategory($categoryId, Auth::id());
-
-        session()->flash('message', 'Channel assigned to category successfully.');
-    }
-
-    public function removeFromCategory(string $channelId, int $categoryId): void
-    {
-        $subscription = YouTubeSubscription::forUser(Auth::id())
-            ->where('channel_id', $channelId)
-            ->firstOrFail();
-
-        $subscription->removeFromCategory($categoryId);
-
-        session()->flash('message', 'Channel removed from category successfully.');
+        // This will cause the parent component to re-render if needed
+        // The individual cards handle their own state
     }
 
     public function clearFilters(): void

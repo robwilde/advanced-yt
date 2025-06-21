@@ -102,71 +102,7 @@
     @if($subscriptions->count() > 0)
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 mb-6">
             @foreach($subscriptions as $subscription)
-                <div class="bg-white dark:bg-gray-700 rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 relative">
-                    <!-- Thumbnail -->
-                    @if($subscription->thumbnail_url)
-                        <img src="{{ $subscription->thumbnail_url }}" 
-                             alt="{{ $subscription->channel_title }}" 
-                             class="w-full h-24 object-cover">
-                    @else
-                        <div class="w-full h-24 bg-gray-300 dark:bg-gray-600 flex items-center justify-center">
-                            <span class="text-gray-500 dark:text-gray-400 text-xs">{{ __('No thumbnail') }}</span>
-                        </div>
-                    @endif
-
-                    <!-- Content -->
-                    <div class="p-3">
-                        <h4 class="font-semibold text-sm mb-2 truncate text-gray-900 dark:text-gray-100">
-                            {{ $subscription->channel_title }}
-                        </h4>
-
-                        <!-- Categories -->
-                        @if($subscription->categories->count() > 0)
-                            <div class="mb-3 flex flex-wrap gap-1">
-                                @foreach($subscription->categories as $category)
-                                    <span class="inline-flex items-center text-xs px-2 py-1 rounded-full text-white" 
-                                          style="background-color: {{ $category->color }}">
-                                        {{ $category->name }}
-                                        <button wire:click="removeFromCategory('{{ $subscription->channel_id }}', {{ $category->id }})" 
-                                                class="ml-1 hover:bg-black hover:bg-opacity-20 rounded-full p-0.5"
-                                                title="{{ __('Remove from category') }}">
-                                            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                                                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-                                            </svg>
-                                        </button>
-                                    </span>
-                                @endforeach
-                            </div>
-                        @endif
-
-                        <!-- Category Assignment -->
-                        @if($categories->count() > 0)
-                            <div class="mb-3">
-                                <select wire:change="assignToCategory('{{ $subscription->channel_id }}', $event.target.value)" 
-                                        class="w-full text-xs rounded border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white focus:border-blue-500 focus:ring-blue-500">
-                                    <option value="">{{ __('Add to category...') }}</option>
-                                    @foreach($categories as $category)
-                                        @if(!$subscription->hasCategory($category->id))
-                                            <option value="{{ $category->id }}">{{ $category->name }}</option>
-                                        @endif
-                                    @endforeach
-                                </select>
-                            </div>
-                        @endif
-
-                        <!-- Actions -->
-                        <div class="flex justify-between items-center">
-                            <span class="text-xs bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-100 px-1.5 py-0.5 rounded-full">
-                                {{ __('Channel') }}
-                            </span>
-                            <a href="https://www.youtube.com/channel/{{ $subscription->channel_id }}" 
-                               target="_blank" 
-                               class="text-xs text-blue-600 dark:text-blue-400 hover:underline">
-                                {{ __('Visit channel') }}
-                            </a>
-                        </div>
-                    </div>
-                </div>
+                <livewire:subscription-card :subscription="$subscription" :key="$subscription->id" />
             @endforeach
         </div>
 
