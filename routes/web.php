@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\PlaylistsController;
 use App\Http\Controllers\SubscriptionsController;
 use App\Http\Controllers\YouTubeAuthController;
@@ -20,6 +21,10 @@ Route::get('subscriptions', SubscriptionsController::class)
 Route::post('subscriptions/sync', [SubscriptionsController::class, 'sync'])
     ->middleware(['auth', 'verified'])
     ->name('subscriptions.sync');
+
+Route::get('categories', [CategoryController::class, 'index'])
+    ->middleware(['auth', 'verified'])
+    ->name('categories.index');
 
 Route::view('profile', 'profile')
     ->middleware(['auth'])
