@@ -14,8 +14,6 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use JsonException;
-use RuntimeException;
 
 final class YouTubeService implements YouTubeServiceInterface
 {
@@ -164,7 +162,7 @@ final class YouTubeService implements YouTubeServiceInterface
         }
 
         $this->initYouTubeService();
-
+        
         $allSubscriptions = [];
         $nextPageToken = null;
         $totalFetched = 0;
@@ -183,16 +181,16 @@ final class YouTubeService implements YouTubeServiceInterface
                 }
 
                 Log::info('Fetching YouTube subscriptions page', ['params' => $params]);
-
+                
                 $response = $this->youtube->subscriptions->listSubscriptions('snippet', $params);
                 $items = $response->getItems();
                 $nextPageToken = $response->getNextPageToken();
-
+                
                 if (!empty($items)) {
                     $formattedItems = $this->formatSubscriptionsResponse($items);
                     $allSubscriptions = array_merge($allSubscriptions, $formattedItems);
                     $totalFetched += count($items);
-
+                    
                     Log::info('Fetched subscriptions batch', [
                         'count' => count($items),
                         'total' => $totalFetched,
@@ -259,17 +257,9 @@ final class YouTubeService implements YouTubeServiceInterface
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
-
+            
             throw $e;
         }
-    }
-
-    /**
-     * Check if user has any cached subscriptions
-     */
-    public function hasCachedSubscriptions(int $userId): bool
-    {
-        return YouTubeSubscription::where('user_id', $userId)->exists();
     }
 
     /**
@@ -283,28 +273,25 @@ final class YouTubeService implements YouTubeServiceInterface
 
     /**
      * Store or update YouTube account info
-     *
-     * @throws Exception
-     * @throws JsonException
      */
     public function storeYouTubeAccount(array $tokenData): void
     {
         $userId = Auth::id();
         if (!$userId) {
-            throw new RuntimeException('User not authenticated');
+            throw new \RuntimeException('User not authenticated');
         }
 
         // Get channel info to store channel ID
         $this->setAccessToken($tokenData);
         $this->initYouTubeService();
-
+        
         $channelResponse = $this->youtube->channels->listChannels('snippet', ['mine' => true]);
         $channels = $channelResponse->getItems();
-
+        
         if (empty($channels)) {
-            throw new RuntimeException('No YouTube channel found for authenticated user');
+            throw new \RuntimeException('No YouTube channel found for authenticated user');
         }
-
+        
         $channel = $channels[0];
         $channelId = $channel->getId();
 
@@ -312,10 +299,10 @@ final class YouTubeService implements YouTubeServiceInterface
             ['user_id' => $userId],
             [
                 'youtube_channel_id' => $channelId,
-                'access_token' => json_encode($tokenData, JSON_THROW_ON_ERROR),
+                'access_token' => json_encode($tokenData),
                 'refresh_token' => $tokenData['refresh_token'] ?? null,
-                'token_expires_at' => isset($tokenData['expires_in'])
-                    ? now()->addSeconds($tokenData['expires_in'])
+                'token_expires_at' => isset($tokenData['expires_in']) 
+                    ? now()->addSeconds($tokenData['expires_in']) 
                     : null,
             ]
         );
