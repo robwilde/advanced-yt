@@ -4,13 +4,16 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Builder;
 
 class Category extends Model
 {
+    use HasFactory;
     protected $fillable = [
         'user_id',
         'name',
@@ -37,6 +40,21 @@ class Category extends Model
             'id',
             'channel_id'
         )->withPivot('user_id')->withTimestamps();
+    }
+
+    public function playlists(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            UserPlaylist::class,
+            'category_playlists',
+            'category_id',
+            'user_playlist_id'
+        )->withPivot(['user_id', 'priority'])->withTimestamps();
+    }
+
+    public function playlistMappings(): HasMany
+    {
+        return $this->hasMany(CategoryPlaylist::class);
     }
 
     public function scopeForUser(Builder $query, int $userId): Builder
