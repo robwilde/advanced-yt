@@ -47,6 +47,10 @@ Route::post('playlists/sync', [PlaylistsController::class, 'sync'])
     ->middleware(['auth', 'verified'])
     ->name('playlists.sync');
 
+Route::get('playlists/{playlistId}/videos', App\Livewire\PlaylistVideos::class)
+    ->middleware(['auth', 'verified'])
+    ->name('playlists.videos');
+
 Route::view('profile', 'profile')
     ->middleware(['auth'])
     ->name('profile');
