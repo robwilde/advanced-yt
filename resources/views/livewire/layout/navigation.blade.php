@@ -33,6 +33,15 @@ new class extends Component
                     <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')" wire:navigate>
                         {{ __('Dashboard') }}
                     </x-nav-link>
+                    <x-nav-link :href="route('subscriptions')" :active="request()->routeIs('subscriptions*')" wire:navigate>
+                        {{ __('Subscriptions') }}
+                    </x-nav-link>
+                    <x-nav-link :href="route('categories.index')" :active="request()->routeIs('categories.*')" wire:navigate>
+                        {{ __('Categories') }}
+                    </x-nav-link>
+                    <x-nav-link :href="route('playlists.index')" :active="request()->routeIs('playlists.*')" wire:navigate>
+                        {{ __('Playlists') }}
+                    </x-nav-link>
                 </div>
             </div>
 
@@ -83,6 +92,15 @@ new class extends Component
         <div class="pt-2 pb-3 space-y-1">
             <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')" wire:navigate>
                 {{ __('Dashboard') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('subscriptions')" :active="request()->routeIs('subscriptions*')" wire:navigate>
+                {{ __('Subscriptions') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('categories.index')" :active="request()->routeIs('categories.*')" wire:navigate>
+                {{ __('Categories') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('playlists.index')" :active="request()->routeIs('playlists.*')" wire:navigate>
+                {{ __('Playlists') }}
             </x-responsive-nav-link>
         </div>
 
