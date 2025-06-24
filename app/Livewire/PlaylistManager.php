@@ -155,7 +155,11 @@ class PlaylistManager extends Component
                 $this->addError('delete', 'Failed to delete playlist from YouTube.');
             }
         } catch (Throwable $e) {
-            $this->addError('delete', 'An error occurred while deleting the playlist.');
+            if (str_contains($e->getMessage(), 'Insufficient permissions')) {
+                $this->addError('delete', 'Insufficient permissions. Please reconnect your YouTube account to grant full access.');
+            } else {
+                $this->addError('delete', 'An error occurred while deleting the playlist.');
+            }
         }
     }
 
