@@ -27,7 +27,10 @@ beforeEach(function () {
     $this->mockClient->shouldReceive('setClientSecret')->once();
     $this->mockClient->shouldReceive('setRedirectUri')->once();
     $this->mockClient->shouldReceive('setDeveloperKey')->once();
-    $this->mockClient->shouldReceive('setScopes')->once();
+    $this->mockClient->shouldReceive('setScopes')->once()->with([
+        'https://www.googleapis.com/auth/youtube.readonly',
+        'https://www.googleapis.com/auth/youtube'
+    ]);
     $this->mockClient->shouldReceive('setAccessType')->once();
     $this->mockClient->shouldReceive('setPrompt')->once();
     $this->mockClient->shouldReceive('setAccessToken')->once();
@@ -197,7 +200,7 @@ describe('YouTube Playlist Service', function () {
 
             $mockPlaylists->shouldReceive('delete')
                 ->with('PLtest123')
-                ->andThrow(new Exception('API Error'));
+                ->andThrow(new \Google\Service\Exception('API Error'));
 
             $result = $this->service->deletePlaylist('PLtest123');
 

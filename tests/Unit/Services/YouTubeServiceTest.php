@@ -32,7 +32,10 @@ beforeEach(function () {
     $this->googleClient
         ->shouldReceive('setScopes')
         ->once()
-        ->with(['https://www.googleapis.com/auth/youtube.readonly']);
+        ->with([
+            'https://www.googleapis.com/auth/youtube.readonly',
+            'https://www.googleapis.com/auth/youtube'
+        ]);
     $this->googleClient
         ->shouldReceive('setAccessType')
         ->once()
