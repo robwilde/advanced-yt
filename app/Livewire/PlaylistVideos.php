@@ -21,6 +21,8 @@ final class PlaylistVideos extends Component
     public array $selectedVideos = [];
     public bool $selectAll = false;
     public bool $loading = true;
+    public bool $bulkDeleting = false;
+    public bool $clearingPlaylist = false;
     public ?UserPlaylist $playlist = null;
 
     public function mount(string $playlistId): void
@@ -99,6 +101,7 @@ final class PlaylistVideos extends Component
             return;
         }
 
+        $this->bulkDeleting = true;
         $deleted = 0;
         $failed = 0;
 
@@ -137,6 +140,8 @@ final class PlaylistVideos extends Component
             } else {
                 $this->addError('bulk-delete', 'An error occurred during bulk deletion.');
             }
+        } finally {
+            $this->bulkDeleting = false;
         }
     }
 
@@ -147,6 +152,7 @@ final class PlaylistVideos extends Component
             return;
         }
 
+        $this->clearingPlaylist = true;
         $allVideoIds = array_column($this->videos, 'id');
         $deleted = 0;
         $failed = 0;
@@ -186,11 +192,13 @@ final class PlaylistVideos extends Component
             } else {
                 $this->addError('clear', 'An error occurred while clearing the playlist.');
             }
+        } finally {
+            $this->clearingPlaylist = false;
         }
     }
 
     public function render(): View
     {
-        return view('livewire.playlist-videos');
+        return view('livewire.playlist-videos')->layout('layouts.app');
     }
 }
