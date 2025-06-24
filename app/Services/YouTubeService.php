@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use JsonException;
 use RuntimeException;
+use Throwable;
 
 final class YouTubeService implements YouTubeServiceInterface
 {
@@ -74,6 +75,27 @@ final class YouTubeService implements YouTubeServiceInterface
      */
     public function getPlaylistItems(string $playlistId): array
     {
+        $userId = Auth::id();
+        if (!$userId) {
+            throw new RuntimeException('User not authenticated');
+        }
+
+        // Get the user's YouTube account and access token
+        $youtubeAccount = UserYouTubeAccount::where('user_id', $userId)->first();
+        if (!$youtubeAccount || !$youtubeAccount->access_token) {
+            throw new RuntimeException('No YouTube account connected');
+        }
+
+        // Set the access token on the client
+        try {
+            $accessToken = json_decode($youtubeAccount->access_token, true, 512, JSON_THROW_ON_ERROR);
+            $this->setAccessToken($accessToken);
+        } catch (JsonException $e) {
+            throw new RuntimeException('Invalid access token format');
+        }
+
+        $this->initYouTubeService();
+
         $response = $this->youtube->playlistItems->listPlaylistItems(
             'snippet,contentDetails',
             [
@@ -157,6 +179,8 @@ final class YouTubeService implements YouTubeServiceInterface
 
     /**
      * Fetch all subscriptions from YouTube API and cache them
+     *
+     * @throws Throwable
      */
     public function syncAllSubscriptions(): array
     {
@@ -192,7 +216,7 @@ final class YouTubeService implements YouTubeServiceInterface
 
                 if (!empty($items)) {
                     $formattedItems = $this->formatSubscriptionsResponse($items);
-                    $allSubscriptions = array_merge($allSubscriptions, $formattedItems);
+                    array_push($allSubscriptions, ...$formattedItems);
                     $totalFetched += count($items);
 
                     Log::info('Fetched subscriptions batch', [
@@ -330,6 +354,25 @@ final class YouTubeService implements YouTubeServiceInterface
      */
     public function createPlaylist(string $title, ?string $description = null, string $privacyStatus = 'private'): array
     {
+        $userId = Auth::id();
+        if (!$userId) {
+            throw new RuntimeException('User not authenticated');
+        }
+
+        // Get the user's YouTube account and access token
+        $youtubeAccount = UserYouTubeAccount::where('user_id', $userId)->first();
+        if (!$youtubeAccount || !$youtubeAccount->access_token) {
+            throw new RuntimeException('No YouTube account connected');
+        }
+
+        // Set the access token on the client
+        try {
+            $accessToken = json_decode($youtubeAccount->access_token, true, 512, JSON_THROW_ON_ERROR);
+            $this->setAccessToken($accessToken);
+        } catch (JsonException $e) {
+            throw new RuntimeException('Invalid access token format');
+        }
+
         $this->initYouTubeService();
 
         $playlist = new \Google_Service_YouTube_Playlist();
@@ -371,6 +414,25 @@ final class YouTubeService implements YouTubeServiceInterface
      */
     public function updatePlaylist(string $playlistId, ?string $title = null, ?string $description = null, ?string $privacyStatus = null): array
     {
+        $userId = Auth::id();
+        if (!$userId) {
+            throw new RuntimeException('User not authenticated');
+        }
+
+        // Get the user's YouTube account and access token
+        $youtubeAccount = UserYouTubeAccount::where('user_id', $userId)->first();
+        if (!$youtubeAccount || !$youtubeAccount->access_token) {
+            throw new RuntimeException('No YouTube account connected');
+        }
+
+        // Set the access token on the client
+        try {
+            $accessToken = json_decode($youtubeAccount->access_token, true, 512, JSON_THROW_ON_ERROR);
+            $this->setAccessToken($accessToken);
+        } catch (JsonException $e) {
+            throw new RuntimeException('Invalid access token format');
+        }
+
         $this->initYouTubeService();
 
         // First get the current playlist
@@ -425,6 +487,25 @@ final class YouTubeService implements YouTubeServiceInterface
      */
     public function deletePlaylist(string $playlistId): bool
     {
+        $userId = Auth::id();
+        if (!$userId) {
+            throw new RuntimeException('User not authenticated');
+        }
+
+        // Get the user's YouTube account and access token
+        $youtubeAccount = UserYouTubeAccount::where('user_id', $userId)->first();
+        if (!$youtubeAccount || !$youtubeAccount->access_token) {
+            throw new RuntimeException('No YouTube account connected');
+        }
+
+        // Set the access token on the client
+        try {
+            $accessToken = json_decode($youtubeAccount->access_token, true, 512, JSON_THROW_ON_ERROR);
+            $this->setAccessToken($accessToken);
+        } catch (JsonException $e) {
+            throw new RuntimeException('Invalid access token format');
+        }
+
         $this->initYouTubeService();
 
         try {
@@ -435,6 +516,13 @@ final class YouTubeService implements YouTubeServiceInterface
                 'playlistId' => $playlistId,
                 'error' => $e->getMessage()
             ]);
+
+            // Check if it's a permissions issue
+            if (str_contains($e->getMessage(), 'insufficient authentication scopes') ||
+                str_contains($e->getMessage(), 'insufficientPermissions')) {
+                throw new RuntimeException('Insufficient permissions. Please reconnect your YouTube account to grant full access.');
+            }
+
             return false;
         }
     }
@@ -478,6 +566,25 @@ final class YouTubeService implements YouTubeServiceInterface
      */
     public function removeVideoFromPlaylist(string $playlistItemId): bool
     {
+        $userId = Auth::id();
+        if (!$userId) {
+            throw new RuntimeException('User not authenticated');
+        }
+
+        // Get the user's YouTube account and access token
+        $youtubeAccount = UserYouTubeAccount::where('user_id', $userId)->first();
+        if (!$youtubeAccount || !$youtubeAccount->access_token) {
+            throw new RuntimeException('No YouTube account connected');
+        }
+
+        // Set the access token on the client
+        try {
+            $accessToken = json_decode($youtubeAccount->access_token, true, 512, JSON_THROW_ON_ERROR);
+            $this->setAccessToken($accessToken);
+        } catch (JsonException $e) {
+            throw new RuntimeException('Invalid access token format');
+        }
+
         $this->initYouTubeService();
 
         try {
@@ -502,6 +609,20 @@ final class YouTubeService implements YouTubeServiceInterface
         $userId = Auth::id();
         if (!$userId) {
             throw new RuntimeException('User not authenticated');
+        }
+
+        // Get the user's YouTube account and access token
+        $youtubeAccount = UserYouTubeAccount::where('user_id', $userId)->first();
+        if (!$youtubeAccount || !$youtubeAccount->access_token) {
+            throw new RuntimeException('No YouTube account connected');
+        }
+
+        // Set the access token on the client
+        try {
+            $accessToken = json_decode($youtubeAccount->access_token, true, 512, JSON_THROW_ON_ERROR);
+            $this->setAccessToken($accessToken);
+        } catch (JsonException $e) {
+            throw new RuntimeException('Invalid access token format');
         }
 
         $this->initYouTubeService();
