@@ -65,6 +65,14 @@ new class extends Component
                             {{ __('Profile') }}
                         </x-dropdown-link>
 
+                        <!-- YouTube Connection -->
+                        <x-dropdown-link :href="route('auth.youtube')" class="flex items-center">
+                            <svg class="w-4 h-4 mr-2 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z"/>
+                            </svg>
+                            {{ __('Reconnect YouTube') }}
+                        </x-dropdown-link>
+
                         <!-- Authentication -->
                         <button wire:click="logout" class="w-full text-start">
                             <x-dropdown-link>
@@ -114,6 +122,11 @@ new class extends Component
             <div class="mt-3 space-y-1">
                 <x-responsive-nav-link :href="route('profile')" wire:navigate>
                     {{ __('Profile') }}
+                </x-responsive-nav-link>
+
+                <!-- YouTube Connection -->
+                <x-responsive-nav-link :href="route('auth.youtube')">
+                    {{ __('Reconnect YouTube') }}
                 </x-responsive-nav-link>
 
                 <!-- Authentication -->

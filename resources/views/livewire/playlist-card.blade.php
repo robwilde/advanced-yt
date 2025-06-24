@@ -1,4 +1,4 @@
-<div class="bg-white dark:bg-gray-700 rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 relative">
+<div class="bg-white dark:bg-gray-700 rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 relative z-0">
     <!-- Thumbnail -->
     <div class="w-full h-24 relative bg-gray-200 dark:bg-gray-600">
         @if($playlist->thumbnail_url)
@@ -130,8 +130,9 @@
             </div>
 
             <!-- Actions Dropdown -->
-            <div class="relative" x-data="{ open: false }">
+            <div class="relative z-50" x-data="{ open: false }">
                 <button @click="open = !open" 
+                        x-ref="button"
                         class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
                     <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"></path>
@@ -146,8 +147,18 @@
                      x-transition:leave="transition ease-in duration-75"
                      x-transition:leave-start="opacity-100 scale-100"
                      x-transition:leave-end="opacity-0 scale-95"
-                     class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg ring-1 ring-black ring-opacity-5 z-10">
+                     x-anchor.bottom-end="$refs.button"
+                     class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-xl ring-1 ring-black ring-opacity-5 z-[999]"
+                     style="z-index: 999 !important;">
                     <div class="py-1">
+                        <a href="{{ route('playlists.videos', $playlist->youtube_playlist_id) }}" 
+                           @click="open = false"
+                           class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                            <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
+                            </svg>
+                            {{ __('Manage Videos') }}
+                        </a>
                         <a href="https://www.youtube.com/playlist?list={{ $playlist->youtube_playlist_id }}" 
                            target="_blank"
                            @click="open = false"
